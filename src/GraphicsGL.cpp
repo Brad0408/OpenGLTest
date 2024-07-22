@@ -55,10 +55,10 @@ int main(void)
 
         float positions[] = {
 
-            100.0f, 100.0f,  0.0f,  0.0f, //0
-            200.0f, 100.0f,  1.0f,  0.0f, //1
-            200.0f, 200.0f,  1.0f,  1.0f, //2
-            100.0f, 200.0f,  0.0f,  1.0f  //3
+            -50.0f, -50.0f,  0.0f,  0.0f, //0
+             50.0f, -50.0f,  1.0f,  0.0f, //1
+             50.0f,  50.0f,  1.0f,  1.0f, //2
+            -50.0f,  50.0f,  0.0f,  1.0f  //3
 
         };
 
@@ -83,7 +83,7 @@ int main(void)
         IndexBuffer ib(indicies, 6);
 
         glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(-100, 0, 0));
+        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
 
 
         Shader shader("Resources/Shaders/Basic.shader");
@@ -102,7 +102,8 @@ int main(void)
 
         Renderer renderer;
 
-        glm::vec3 translation(200, 200, 0);
+        glm::vec3 translationA(200, 200, 0);
+        glm::vec3 translationB(400, 200, 0);
 
         float r = 0.0f;
         float increment = 0.05f;
@@ -135,12 +136,22 @@ int main(void)
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
+            {
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), translationA);
+                glm::mat4 mvp = proj * view * model;
+                shader.Bind();
+                shader.SetUniformMat4f("u_MVP", mvp);
+                renderer.Draw(va, ib, shader);
+            }
 
 
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), translation);
-
-            //mvp multiply = p * v * m order
-            glm::mat4 mvp = proj * view * model;
+            {
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), translationB);
+                glm::mat4 mvp = proj * view * model;
+                shader.Bind();
+                shader.SetUniformMat4f("u_MVP", mvp);
+                renderer.Draw(va, ib, shader);
+            }
 
 
 
@@ -159,7 +170,8 @@ int main(void)
                 ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
                 ImGui::Checkbox("Another Window", &show_another_window);
 
-                ImGui::SliderFloat3("Translation", &translation.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+                ImGui::SliderFloat3("Translation A", &translationA.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+                ImGui::SliderFloat3("Translation B", &translationB.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
                 ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
 
                 if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
@@ -182,11 +194,39 @@ int main(void)
                 ImGui::End();
             }
 
-            shader.Bind();
-            shader.SetUniform4f("u_Colour", r, 0.0f, 0.0f, 1.0f);
-            shader.SetUniformMat4f("u_MVP", mvp);
+            //shader.Bind();
+            //shader.SetUniformMat4f("u_MVP", mvp);
+            //renderer.Draw(va, ib, shader);
+            //shader.SetUniformMat4f("u_MVP", mvp);
+            //renderer.Draw(va, ib, shader);
 
-            renderer.Draw(va, ib, shader);
+            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+            {
+                translationA += glm::vec3(10, 0, 0);
+            }
+
+            //Moves left
+            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+            {
+                translationA += glm::vec3(-10, 0, 0);
+            }
+
+            //Moves Up
+            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+            {
+                translationA += glm::vec3(0, 10, 0);
+            }
+
+            //Moves Down
+            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+            {
+                translationA +=  glm::vec3(0, -10, 0);
+            }
+
+            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            {
+                glfwTerminate();
+            }
 
 
             if (r > 1.0f)
