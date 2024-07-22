@@ -19,6 +19,9 @@ namespace test
 		void OnImGUIRender() override;
 	
 	
+	private:
+		float m_ClearColour[4];
+
 	};
 
 

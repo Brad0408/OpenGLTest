@@ -34,9 +34,9 @@ public:
 private:
 	std::string m_Filepath;
 	unsigned int m_RendererID;
-	std::unordered_map<std::string, int> m_UniformLocationCache;
+	mutable std::unordered_map<std::string, GLint> m_UniformLocationCache;
 
-	int GetUniformLocation(const std::string& name);
+	GLint GetUniformLocation(const std::string& name) const;
 
 	ShaderProgramSource ParseShader(const std::string& filepath);
 	unsigned int CompileShader(unsigned int type, const std::string& source);

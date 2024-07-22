@@ -20,6 +20,9 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include "imgui/imgui_impl_glfw.h"
 
+#include "tests/TestClearColour.h"
+#include "tests/TestTexture2D.h"
+
 int main(void)
 {
     GLFWwindow* window;
@@ -51,62 +54,22 @@ int main(void)
     }
 
     std::cout << "GL VERSION: " << glGetString(GL_VERSION) << std::endl;
+
+
     {
 
-        float positions[] = {
-
-            -50.0f, -50.0f,  0.0f,  0.0f, //0
-             50.0f, -50.0f,  1.0f,  0.0f, //1
-             50.0f,  50.0f,  1.0f,  1.0f, //2
-            -50.0f,  50.0f,  0.0f,  1.0f  //3
-
-        };
-
-        unsigned int indicies[] = {
-            0,1,2,
-            2,3,0
-        };
 
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 
-        VertexArray va;
-        VertexBuffer vb(positions, 4 * 4 * sizeof(float));
-
-        VertexBufferLayout layout;
-        layout.Push<float>(2);
-        layout.Push<float>(2);
-        va.AddBuffer(vb, layout);
-
-
-        IndexBuffer ib(indicies, 6);
-
-        glm::mat4 proj = glm::ortho(0.0f, 960.0f, 0.0f, 540.0f, -1.0f, 1.0f);
-        glm::mat4 view = glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0));
-
-
-        Shader shader("Resources/Shaders/Basic.shader");
-        shader.Bind();
-        shader.SetUniform4f("u_Colour", 1.0f, 0.0f, 0.0f, 1.0f);
-
-
-        Texture tetxure("Resources/Textures/mario.jpg");
-        tetxure.Bind();
-        shader.SetUniform1i("u_Texture", 0);
-
-        va.Unbind();
-        vb.Unbind();
-        ib.Unbind();
-        shader.Unbind();
+       
 
         Renderer renderer;
 
-        glm::vec3 translationA(200, 200, 0);
-        glm::vec3 translationB(400, 200, 0);
+   
 
-        float r = 0.0f;
-        float increment = 0.05f;
+      
 
 
         IMGUI_CHECKVERSION();
@@ -125,9 +88,20 @@ int main(void)
         bool show_another_window = false;
         ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+
+
+        test::Test* currentTest = nullptr;
+        test::TestMenu* testMenu = new test::TestMenu(currentTest);
+        currentTest = testMenu;
+
+        testMenu->RegisterTest<test::TestClearColour>("Clear Colour");
+        testMenu->RegisterTest<test::TestTexture2D>("Texture 2D");
+
+
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             /* Render here */
             renderer.Clear();
 
@@ -136,114 +110,24 @@ int main(void)
             ImGui_ImplGlfw_NewFrame();
             ImGui::NewFrame();
 
+            if (currentTest)
             {
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), translationA);
-                glm::mat4 mvp = proj * view * model;
-                shader.Bind();
-                shader.SetUniformMat4f("u_MVP", mvp);
-                renderer.Draw(va, ib, shader);
-            }
-
-
-            {
-                glm::mat4 model = glm::translate(glm::mat4(1.0f), translationB);
-                glm::mat4 mvp = proj * view * model;
-                shader.Bind();
-                shader.SetUniformMat4f("u_MVP", mvp);
-                renderer.Draw(va, ib, shader);
-            }
-
-
-
-            // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-            if (show_demo_window)
-                ImGui::ShowDemoWindow(&show_demo_window);
-
-            // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-            {
-                static float f = 0.0f;
-                static int counter = 0;
-
-                ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-                ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-                ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-                ImGui::Checkbox("Another Window", &show_another_window);
-
-                ImGui::SliderFloat3("Translation A", &translationA.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-                ImGui::SliderFloat3("Translation B", &translationB.x, 0.0f, 960.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-                ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-                if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                    counter++;
-                ImGui::SameLine();
-                ImGui::Text("counter = %d", counter);
-
-                ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+                currentTest->Update(0.0f);
+                currentTest->OnRender();
+                ImGui::Begin("Test");
+                if (currentTest != testMenu && ImGui::Button("<-"))
+                {
+                    delete currentTest;
+                    currentTest = testMenu;
+                }
+                currentTest->OnImGUIRender();
                 ImGui::End();
             }
 
 
-            // 3. Show another simple window.
-            if (show_another_window)
-            {
-                ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-                ImGui::Text("Hello from another window!");
-                if (ImGui::Button("Close Me"))
-                    show_another_window = false;
-                ImGui::End();
-            }
-
-            //shader.Bind();
-            //shader.SetUniformMat4f("u_MVP", mvp);
-            //renderer.Draw(va, ib, shader);
-            //shader.SetUniformMat4f("u_MVP", mvp);
-            //renderer.Draw(va, ib, shader);
-
-            if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-            {
-                translationA += glm::vec3(10, 0, 0);
-            }
-
-            //Moves left
-            if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-            {
-                translationA += glm::vec3(-10, 0, 0);
-            }
-
-            //Moves Up
-            if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-            {
-                translationA += glm::vec3(0, 10, 0);
-            }
-
-            //Moves Down
-            if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-            {
-                translationA +=  glm::vec3(0, -10, 0);
-            }
-
-            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            {
-                glfwTerminate();
-            }
 
 
-            if (r > 1.0f)
-            {
-                increment = -0.05f;
-            }
-            else if (r < 0.0f)
-            {
-                increment = 0.05f;
-            }
-
-            r += increment;
-
-
-          
-
-
+      
             ImGui::Render();
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -254,9 +138,15 @@ int main(void)
             glfwPollEvents();
         }
 
+        if (currentTest != testMenu)
+        {
+            delete testMenu;
+        }
+        delete currentTest;
+
     }
 
-
+    
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
