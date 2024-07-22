@@ -22,6 +22,7 @@
 
 #include "tests/TestClearColour.h"
 #include "tests/TestTexture2D.h"
+#include "tests/Test3DCube.h"
 
 int main(void)
 {
@@ -54,6 +55,13 @@ int main(void)
     }
 
     std::cout << "GL VERSION: " << glGetString(GL_VERSION) << std::endl;
+
+
+    GLenum err;
+    while ((err = glGetError()) != GL_NO_ERROR)
+    {
+        std::cerr << "OpenGL error: " << err << std::endl;
+    }
 
 
     {
@@ -96,11 +104,17 @@ int main(void)
 
         testMenu->RegisterTest<test::TestClearColour>("Clear Colour");
         testMenu->RegisterTest<test::TestTexture2D>("Texture 2D");
+        testMenu->RegisterTest<test::Test3DCube>("3D Cube");
 
+        float lastTime = 0.0f;
 
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))
         {
+            float currentTime = static_cast<float>(glfwGetTime());
+            float deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+
             glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
             /* Render here */
             renderer.Clear();
@@ -112,7 +126,7 @@ int main(void)
 
             if (currentTest)
             {
-                currentTest->Update(0.0f);
+                currentTest->Update(deltaTime);
                 currentTest->OnRender();
                 ImGui::Begin("Test");
                 if (currentTest != testMenu && ImGui::Button("<-"))
